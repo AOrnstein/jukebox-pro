@@ -3,6 +3,8 @@ const router = express.Router();
 export default router;
 
 import { getTracks, getTrackById } from "#db/queries/tracks";
+import requireUser from "#middleware/requireUser";
+import { getPlaylistsByUserIdAndTrackId } from "#db/queries/playlists";
 
 router.get("/", async (req, res) => {
   const tracks = await getTracks();
@@ -11,7 +13,7 @@ router.get("/", async (req, res) => {
 
 router.param("id", async (req, res, next, id) => {
   const track = await getTrackById(id);
-  if (!playlist) return res.status(404).send("Track not found.");
+  if (!track) return res.status(404).send("Track not found.");
 
   req.track = track;
   next();
@@ -19,4 +21,12 @@ router.param("id", async (req, res, next, id) => {
 
 router.get("/:id", (req, res) => {
   res.send(req.track);
+});
+
+router.get("/:id/playlists", requireUser, async (req, res) => {
+  const playlists = await getPlaylistsByUserIdAndTrackId(
+    req.user.id,
+    req.track.id,
+  );
+  res.send(playlists);
 });
